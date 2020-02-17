@@ -212,7 +212,7 @@ destroy_tun_device() {
 if [ -n "$IPROUTE" ]; then
 	fix_ip_get_output () {
 		sed -e 's/ /\n/g' | \
-		    sed -ne '1p;/via/{N;p};/dev/{N;p};/src/{N;p};/mtu/{N;p}'
+		    sed -ne '1p;/via/{N;p};/dev/{N;p};/src/{N;p};/mtu/{N;p};s/ \?uid \?[0-9]\+//g'
 	}
 
 	set_vpngateway_route() {
@@ -541,20 +541,24 @@ restore_resolvconf_openwrt() {
 # === resolv.conf handling via /sbin/resolvconf (Debian, Ubuntu, Gentoo)) =========
 
 modify_resolvconf_manager() {
-	NEW_RESOLVCONF=""
-	for i in $INTERNAL_IP4_DNS; do
-		NEW_RESOLVCONF="$NEW_RESOLVCONF
-nameserver $i"
-	done
-	if [ -n "$CISCO_DEF_DOMAIN" ]; then
-		NEW_RESOLVCONF="$NEW_RESOLVCONF
-domain $CISCO_DEF_DOMAIN"
-	fi
-	echo "$NEW_RESOLVCONF" | /sbin/resolvconf -a $TUNDEV
+        NEW_RESOLVCONF=""
+        for i in $INTERNAL_IP4_DNS; do
+                DNS_RESOLVERS="$DNS_RESOLVERS $i"
+        done
+        if [ -n "$CISCO_DEF_DOMAIN" ]; then
+                DNS_DOMAINS="$DNS_DOMAINS $CISCO_DEF_DOMAIN"
+        fi
+
+        # Add resolvers to the tunnel device
+        /usr/bin/resolvectl dns $TUNDEV $DNS_RESOLVERS
+
+        # Add domains to the tunnel device
+        /usr/bin/resolvectl domain $TUNDEV $DNS_DOMAINS
 }
 
 restore_resolvconf_manager() {
-	/sbin/resolvconf -d $TUNDEV
+        # Revert all DNS configurations on tunnel device
+        /usr/bin/resolvectl revert $TUNDEV
 }
 
 # ========= Toplevel state handling  =======================================

@@ -1,3 +1,11 @@
+* vpnc-0.5.4.tar.gz Mon Feb 17 17:09:22 EST 2020 <lhalbert@lhalbert.xyz>
+
+  User visible changes:
+
+     * Remove UID from route string in fix_ip_get_output function.
+     * Migrate from using resolvconf utility to resolvectl to support
+       systemd operating systems
+
 * vpnc-0.5.3.tar.gz Wed Nov 19 21:29:22 CET 2008
 
   User visible changes:
